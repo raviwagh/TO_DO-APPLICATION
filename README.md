@@ -1,22 +1,30 @@
-# ProTask Manager - Modular Todo Application
+# ProTask Manager - Modular Todo Application v2.0
 
 A feature-rich, modular task management application built with Python and ttkbootstrap.
 
-## Features
+## ✨ What's New in v2.0
 
-✨ **Core Functionality**
-- Create, edit, and delete tasks
-- Add sub-tasks to main tasks
-- Set priority levels (High, Medium, Low)
-- Due dates and times
-- Rich text descriptions
-- Task completion tracking
+**UI/UX Enhancements:**
+- 🎹 Keyboard shortcuts (Ctrl+N, Ctrl+S, Ctrl+D, Delete, Escape, Ctrl+F, Ctrl+Shift+C)
+- ⚡ Instant theme switching (no restart required!)
+- 🔴🟡🟢 Priority icons for visual clarity
+- █████░░░░░ Visual progress bars for sub-tasks
+- 📊 Enhanced dashboard with emoji stats
+- 🖱️ Right-click context menu for quick actions
 
-🎨 **Theme Support**
-- 6 beautiful themes (3 light, 3 dark)
-- Live theme switching
-- Persistent theme preferences
-- Themes include:
+**Smart Features:**
+- 📅 Natural language date parsing ("tomorrow", "next week", "in 3 days")
+- 💾 Auto-save every 30 seconds
+- 🔄 Backup & restore system with automatic rotation
+- 📋 Task duplication
+- 🗑️ Bulk clear completed tasks
+- ✅ Quick toggle task completion
+
+**Professional Polish:**
+- 📑 Full menu bar (File, Edit, View, Help)
+- ⌨️ Keyboard shortcuts reference
+- ℹ️ About dialog
+- 🎨 6 beautiful themes (3 light, 3 dark)
   - **Superhero** (Dark with blue accents)
   - **Cosmo** (Clean light theme)
   - **Darkly** (Sleek dark theme)

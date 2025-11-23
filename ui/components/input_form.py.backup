@@ -1,7 +1,6 @@
 """Input form component for creating and editing tasks."""
 
 import tkinter as tk
-from tkinter import messagebox
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import *
 from ttkbootstrap.widgets.scrolled import ScrolledText
@@ -9,38 +8,18 @@ from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 from config.settings import DATE_FORMAT, DATETIME_FORMAT, PRIORITY_LEVELS, RECURRING_FREQUENCIES
 from utils.validators import TimeValidator
-from ui.components.time_picker import TimePicker
 
 
 class InputForm(ttk.Frame):
     """Task input form with all fields."""
     
     def __init__(self, parent, on_add, on_update, on_clear):
-        super().__init__(parent, padding=0)
+        super().__init__(parent, padding=10)
         self.on_add = on_add
         self.on_update = on_update
         self.on_clear = on_clear
         
         self.editing_sub_todo_mode = tk.BooleanVar(value=False)
-        
-        # Create canvas with scrollbar
-        self.canvas = tk.Canvas(self, highlightthickness=0)
-        self.scrollbar = ttk.Scrollbar(self, orient=VERTICAL, command=self.canvas.yview)
-        self.scrollable_frame = ttk.Frame(self.canvas, padding=10)
-        
-        self.scrollable_frame.bind(
-            "<Configure>",
-            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
-        )
-        
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor=NW)
-        self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        
-        self.scrollbar.pack(side=RIGHT, fill=Y)
-        self.canvas.pack(side=LEFT, fill=BOTH, expand=True)
-        
-        # Enable mousewheel scrolling
-        self.canvas.bind_all("<MouseWheel>", self._on_mousewheel)
         
         # Build form
         self._build_form()
@@ -49,7 +28,7 @@ class InputForm(ttk.Frame):
         """Build the input form."""
         # Header
         self.form_header = ttk.Label(
-            self.scrollable_frame,
+            self,
             text="New Task",
             font=("Helvetica", 16, "bold"),
             bootstyle="primary"
@@ -77,66 +56,35 @@ class InputForm(ttk.Frame):
     
     def _build_details_group(self):
         """Build task details group."""
-        details_group = ttk.Labelframe(self.scrollable_frame, text="Task Details", padding=10)
+        details_group = ttk.Labelframe(self, text="Task Details", padding=10)
         details_group.pack(fill=X, pady=5)
-        
-        # Title
-        ttk.Label(details_group, text="Title").pack(anchor=W)
-        self.todo_title_entry = ttk.Entry(details_group)
-        self.todo_title_entry.pack(fill=X, pady=(0, 10))
-        
-        # Row 1: Priority
-        row1 = ttk.Frame(details_group)
-        row1.pack(fill=X, pady=5)
-        
-        ttk.Label(row1, text="Priority").pack(side=LEFT)
-        self.priority_var = tk.StringVar(value="Medium")
-        self.priority_combo = ttk.Combobox(
-            row1,
-            textvariable=self.priority_var,
-            values=PRIORITY_LEVELS,
-            state="readonly",
-            width=12
-        )
-        self.priority_combo.pack(side=LEFT, padx=(5, 0))
-        
-        # Row 2: Due Date and Time
-        row2 = ttk.Frame(details_group)
-        row2.pack(fill=X, pady=5)
-        
-        ttk.Label(row2, text="Due Date").pack(side=LEFT)
-        self.due_date_entry = DateEntry(
-            row2,
-            width=12,
             dateformat='%Y-%m-%d',
             bootstyle="primary"
         )
-        self.due_date_entry.pack(side=LEFT, padx=(5, 15))
+        self.due_date_entry.pack(side=LEFT, padx=(5, 5))
         
-        ttk.Label(row2, text="Time").pack(side=LEFT)
-        self.due_time_entry = TimePicker(row2)
-        self.due_time_entry.pack(side=LEFT, padx=5)
-        
-        # Row 3: Natural language date input
-        row3 = ttk.Frame(details_group)
-        row3.pack(fill=X, pady=5)
-        
-        ttk.Label(row3, text="Quick Date:").pack(side=LEFT)
-        self.natural_date_entry = ttk.Entry(row3, width=20)
-        self.natural_date_entry.pack(side=LEFT, padx=5)
+        # Add natural language input option
+        ttk.Label(row1, text="or").pack(side=LEFT, padx=2)
+        self.natural_date_entry = ttk.Entry(row1, width=15)
+        self.natural_date_entry.pack(side=LEFT, padx=2)
         self.natural_date_entry.bind('<Return>', self._parse_natural_date)
         
         # Tooltip button
-        tooltip_btn = ttk.Label(row3, text="ℹ️", cursor="hand2")
+        tooltip_btn = ttk.Label(row1, text="ℹ️", cursor="hand2")
         tooltip_btn.pack(side=LEFT)
         tooltip_btn.bind('<Button-1>', lambda e: messagebox.showinfo(
             "Natural Language Dates",
-            "Examples:\n• tomorrow\n• next week\n• in 3 days\n• monday\n• end of month"
+            "Examples:\\n• tomorrow\\n• next week\\n• in 3 days\\n• monday\\n• end of month"
         ))
+        
+        ttk.Label(row1, text="Time").pack(side=LEFT)
+        vcmd = (self.register(self._validate_time), '%P')
+        self.due_time_entry = ttk.Entry(row1, width=8, validate='key', validatecommand=vcmd)
+        self.due_time_entry.pack(side=LEFT, padx=5)
     
     def _build_description_group(self):
         """Build description group."""
-        desc_group = ttk.Labelframe(self.scrollable_frame, text="Description", padding=10)
+        desc_group = ttk.Labelframe(self, text="Description", padding=10)
         desc_group.pack(fill=BOTH, expand=True, pady=5)
         
         # Toolbar
@@ -169,7 +117,7 @@ class InputForm(ttk.Frame):
     
     def _build_advanced_group(self):
         """Build advanced options group."""
-        self.advanced_group = ttk.Labelframe(self.scrollable_frame, text="Options", padding=10)
+        self.advanced_group = ttk.Labelframe(self, text="Options", padding=10)
         self.advanced_group.pack(fill=X, pady=5)
         
         # Reminder Row
@@ -196,7 +144,13 @@ class InputForm(ttk.Frame):
         )
         self.reminder_date_entry.pack(side=LEFT)
         
-        self.reminder_time_entry = TimePicker(self.reminder_frame)
+        vcmd = (self.register(self._validate_time), '%P')
+        self.reminder_time_entry = ttk.Entry(
+            self.reminder_frame,
+            width=8,
+            validate='key',
+            validatecommand=vcmd
+        )
         self.reminder_time_entry.pack(side=LEFT, padx=5)
         
         # Recurring Row
@@ -222,7 +176,7 @@ class InputForm(ttk.Frame):
     
     def _build_status_frame(self):
         """Build completion status frame."""
-        self.status_frame = ttk.Frame(self.scrollable_frame, padding=5)
+        self.status_frame = ttk.Frame(self, padding=5)
         self.status_frame.pack(fill=X)
         
         self.completed_var = tk.BooleanVar()
@@ -236,7 +190,7 @@ class InputForm(ttk.Frame):
     
     def _build_action_buttons(self):
         """Build action buttons."""
-        btn_frame = ttk.Frame(self.scrollable_frame, padding=10)
+        btn_frame = ttk.Frame(self, padding=10)
         btn_frame.pack(fill=X, pady=10)
         
         self.add_button = ttk.Button(
@@ -275,10 +229,6 @@ class InputForm(ttk.Frame):
         """Validate time input."""
         return TimeValidator.validate_time_format(P)
     
-    def _on_mousewheel(self, event):
-        """Handle mousewheel scrolling."""
-        self.canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    
     def _parse_natural_date(self, event=None):
         """Parse natural language date input."""
         from utils.date_parser import DateParser
@@ -297,6 +247,38 @@ class InputForm(ttk.Frame):
                 self.after(1000, lambda: self.natural_date_entry.delete(0, END))
             else:
                 messagebox.showerror("Error", f"Could not parse '{text}'")
+    
+    def _select_tags(self):
+        """Open tag selection dialog."""
+        from config.settings import PREDEFINED_TAGS
+        
+        # Create popup dialog
+        dialog = tk.Toplevel(self)
+        dialog.title("Select Tags")
+        dialog.geometry("300x400")
+        dialog.transient(self)
+        dialog.grab_set()
+        
+        ttk.Label(dialog, text="Select Tags:", font=("Helvetica", 12, "bold")).pack(pady=10)
+        
+        # Tag checkboxes
+        tag_vars = {}
+        for tag_name in PREDEFINED_TAGS.keys():
+            var = tk.BooleanVar(value=tag_name in self.selected_tags)
+            tag_vars[tag_name] = var
+            ttk.Checkbutton(
+                dialog,
+                text=tag_name,
+                variable=var,
+                bootstyle="info-round-toggle"
+            ).pack(anchor=W, padx=20, pady=2)
+        
+        def save_tags():
+            self.selected_tags = [tag for tag, var in tag_vars.items() if var.get()]
+            self.tags_button.configure(text=f"Tags ({len(self.selected_tags)})")
+            dialog.destroy()
+        
+        ttk.Button(dialog, text="Save", command=save_tags, bootstyle="success").pack(pady=10)
     
     def apply_bold(self):
         """Apply bold formatting."""
@@ -345,20 +327,6 @@ class InputForm(ttk.Frame):
         
         data = {
             "title": title,
-            "description_content": self.get_formatted_text(),
-            "completed": self.completed_var.get()
-        }
-        
-        if not is_sub:
-            data["priority"] = self.priority_var.get()
-            
-            d_date_str = self.due_date_entry.entry.get()
-            if not d_date_str:
-                return None, "Due Date is required"
-            
-            try:
-                d_date = datetime.strptime(d_date_str, DATE_FORMAT).date()
-            except ValueError:
                 return None, "Invalid Date Format"
             
             d_time = self.due_time_entry.get().strip() or "23:59"
@@ -404,7 +372,6 @@ class InputForm(ttk.Frame):
         
         self.due_time_entry.delete(0, END)
         
-        self.priority_combo.set("Medium")
         self.priority_combo.config(state="readonly")
         
         self.due_date_entry.entry.config(state="normal")
@@ -415,8 +382,6 @@ class InputForm(ttk.Frame):
         self.due_time_entry.config(state="normal")
         self.advanced_group.pack(fill=X, pady=5)
         self.toggle_reminder_options()
-        
-        self.completed_var.set(False)
         
         self.add_button.config(text="Add Task", bootstyle="success", state=NORMAL)
         self.update_button.config(state=DISABLED)
@@ -432,18 +397,6 @@ class InputForm(ttk.Frame):
         if desc and isinstance(desc, list):
             target = self.description_text.text if hasattr(self.description_text, 'text') else self.description_text
             for line in desc:
-                target.insert(END, line.get('text', '') + "\n")
-        
-        if not is_sub:
-            self.form_header.config(text="Edit Task", bootstyle="warning")
-            
-            self.priority_var.set(todo.get("priority", "Medium"))
-            
-            if todo.get("due_datetime"):
-                try:
-                    dt = datetime.strptime(todo["due_datetime"], DATETIME_FORMAT)
-                    self.due_date_entry.entry.delete(0, END)
-                    self.due_date_entry.entry.insert(0, dt.strftime(DATE_FORMAT))
                     self.due_time_entry.insert(0, dt.strftime("%H:%M"))
                 except:
                     pass

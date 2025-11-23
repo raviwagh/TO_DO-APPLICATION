@@ -48,6 +48,7 @@ class Dashboard(ttk.Frame):
         """Update statistics display."""
         total = len(todos)
         active = sum(1 for t in todos if not t.get("completed"))
+        completed = sum(1 for t in todos if t.get("completed"))
         
         # Calculate overdue
         overdue = 0
@@ -61,7 +62,9 @@ class Dashboard(ttk.Frame):
                 except:
                     pass
         
-        self.stats_label.config(text=f"Total: {total}  |  Active: {active}  |  Overdue: {overdue}")
+        # Enhanced stats with emojis
+        stats_text = f"📊 Total: {total}  |  ✅ Active: {active}  |  ⏰ Overdue: {overdue}  |  ✓ Completed: {completed}"
+        self.stats_label.config(text=stats_text)
     
     def get_search_query(self):
         """Get current search query."""

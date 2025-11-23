@@ -104,6 +104,54 @@ class TaskList(ttk.Frame):
         self.tree.pack(side=LEFT, fill=BOTH, expand=True)
         
         self._configure_tags()
+        
+        # Add context menu
+        self._setup_context_menu()
+    
+    def _setup_context_menu(self):
+        """Setup right-click context menu."""
+        self.context_menu = tk.Menu(self.tree, tearoff=0)
+        self.context_menu.add_command(label="✏️ Edit Task", command=self._context_edit)
+        self.context_menu.add_command(label="📋 Duplicate Task", command=self._context_duplicate)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="✅ Mark Complete", command=self._context_toggle_complete)
+        self.context_menu.add_command(label="➕ Add Sub-Task", command=self._context_add_subtask)
+        self.context_menu.add_separator()
+        self.context_menu.add_command(label="🗑️ Delete", command=self._context_delete)
+        
+        # Bind right-click
+        self.tree.bind("<Button-3>", self._show_context_menu)
+    
+    def _show_context_menu(self, event):
+        """Show context menu on right-click."""
+        # Select item under cursor
+        item = self.tree.identify_row(event.y)
+        if item:
+            self.tree.selection_set(item)
+            self.context_menu.post(event.x_root, event.y_root)
+    
+    def _context_edit(self):
+        """Edit task from context menu."""
+        self.on_select()
+    
+    def _context_duplicate(self):
+        """Duplicate task from context menu."""
+        # This will be called by parent window
+        if hasattr(self, 'duplicate_callback'):
+            self.duplicate_callback()
+    
+    def _context_toggle_complete(self):
+        """Toggle task completion from context menu."""
+        if hasattr(self, 'toggle_complete_callback'):
+            self.toggle_complete_callback()
+    
+    def _context_add_subtask(self):
+        """Add sub-task from context menu."""
+        self.on_add_subtask()
+    
+    def _context_delete(self):
+        """Delete task from context menu."""
+        self.on_delete()
     
     def _configure_tags(self):
         """Configure treeview tags with theme colors."""
@@ -194,6 +242,15 @@ class TaskList(ttk.Frame):
     
     def _insert_todo(self, idx, todo):
         """Insert a todo item into the tree."""
+        # Priority icons
+        priority_icons = {
+            "High": "🔴",
+            "Medium": "🟡",
+            "Low": "🟢"
+        }
+        priority = todo.get("priority", "Medium")
+        priority_icon = priority_icons.get(priority, "🟡")
+        
         # Status
         status = "Done" if todo.get("completed") else "Active"
         is_overdue = False
@@ -205,13 +262,17 @@ class TaskList(ttk.Frame):
             except:
                 pass
         
-        # Progress
+        # Progress with visual bar
         subs = todo.get("sub_todos", [])
-        progress = "0%"
+        progress_text = "0%"
+        progress_bar = ""
         if subs:
             done_subs = sum(1 for s in subs if s.get("completed"))
             pct = int((done_subs / len(subs)) * 100)
-            progress = f"{pct}%"
+            progress_text = f"{pct}%"
+            # Create visual progress bar using Unicode blocks
+            filled = int(pct / 10)
+            progress_bar = "█" * filled + "░" * (10 - filled)
         
         # Display date
         d_str = todo.get("due_datetime", "")
@@ -221,19 +282,20 @@ class TaskList(ttk.Frame):
             d_disp = ""
         
         # Tags
-        tags = [todo.get("priority", "Medium")]
+        tags = [priority]
         if todo.get("completed"):
             tags.append("completed")
         elif is_overdue:
             tags.append("overdue")
         
-        # Insert main task
+        # Insert main task with icon
         parent_id = str(idx)
+        task_title = f"{priority_icon} {todo['title']}"
         self.tree.insert(
             "", END,
             iid=parent_id,
-            text=todo['title'],
-            values=(todo.get("priority"), d_disp, progress, status),
+            text=task_title,
+            values=(priority, d_disp, progress_bar if progress_bar else progress_text, status),
             tags=tags
         )
         
@@ -241,11 +303,12 @@ class TaskList(ttk.Frame):
         for sub_idx, sub in enumerate(subs):
             sub_id = f"{parent_id}-{sub_idx}"
             st_tags = ["completed"] if sub.get("completed") else []
+            sub_status = "✓ Done" if sub.get("completed") else "○ Active"
             self.tree.insert(
                 parent_id, END,
                 iid=sub_id,
-                text=f"↳ {sub['title']}",
-                values=("", "", "", "Done" if sub.get("completed") else "Active"),
+                text=f"  ↳ {sub['title']}",
+                values=("", "", "", sub_status),
                 tags=st_tags
             )
         
